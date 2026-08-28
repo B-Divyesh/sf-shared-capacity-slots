@@ -51,6 +51,14 @@ Repair verification on 2026-08-28 (base candidate `fcfc6216377ef69c0315b06441ae7
 - The original crash was not reproducible in either full clean test run, so no product change was made to paper over a runner SIGSEGV.
 - A separate reproducible offline defect was corrected: a request for an unvisited route while offline was incorrectly given the planner shell. The service worker now serves the explicit cached offline guide for that case, while an already visited page still returns from cache. The behavior is covered in `tests/e2e/app.spec.ts`.
 
+## Deployment
+
+- Repair commit: `c1caafee0c99bfef4b146b1411fd437c08c20fbd` (`fix: serve offline fallback for uncached routes`), pushed to `origin/main`.
+- Static deployment command: `/opt/fleet/lib/deploy-static.sh shared-capacity-slots /work/repo/dist`.
+- Azure Static Web Apps upload `51c15dce-e08e-4079-97c8-f75f0a89d84e` completed successfully on 2026-08-28. The deployed static app is live at `https://shared-capacity-slots.sociobot.in`.
+- Live identity check: `/opt/fleet/lib/verify-url.sh https://shared-capacity-slots.sociobot.in <temporary-evidence-dir>` returned HTTP 200, title `Shared Capacity Slots — map real service availability`, `lang=en`, one `h1`, a main landmark, zero missing image alt attributes, and zero page/console errors. `/privacy/`, `/terms/`, and `/manifest.webmanifest` each returned HTTP 200.
+- Live PWA smoke test: the deployed `/sw.js` reports cache revision `scs-v1.0.1`; after installation, an offline visit to `/not-cached-offline-route` showed “The field board is still on this device.”
+
 ## Known v1 boundaries
 
 - A resource supports one regular daily working interval. Split shifts and date-specific leave should be imported as busy ICS events.
