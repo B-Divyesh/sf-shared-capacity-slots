@@ -21,43 +21,47 @@ npm ci
 npm test
 ```
 
-Repair verification on 2026-08-28 (base candidate `fcfc6216377ef69c0315b06441ae793e08dff3bc`):
+Repair verification on 2026-08-28 (base candidate `d19a6766177d45e7bddca451cc71d05909c1c923`):
 
-- Initial clean replay, exactly `npm ci && npm test`: passed. The reported Chromium 1208 SIGSEGV while creating an offline-test context did **not** reproduce.
-- After the repair, a second exact clean replay, `npm ci && npm test`: passed.
-  - Vitest: 17/17 tests passed (allocation conflicts, parallel capacity, baseline recovery, overlap boundaries, DST transitions, half-hour zones, ICS variants/recurrence/exceptions, CSV/ICS semantics, backup validation).
+- Failure reproduced with the original exact clean command, `npm ci && npm test`. Unit tests (17/17) and the build passed, then Playwright reported `Running 16 tests using 2 workers`. Chromium headless shell revision 1208 (`chromium_headless_shell-1208`) received `signal 11 SEGV_MAPERR` during `browser.newContext`; the run ended with 11 passed, 4 skipped, and 1 failed (`[mobile] loads without browser errors`). This confirms a browser-process startup race rather than an application assertion failure.
+- Focused regression: `npm run test:unit -- --run tests/unit/playwright-config.test.ts` passed 1/1. It locks `fullyParallel: false`, `workers: 1`, and both existing `chromium` and `mobile` projects.
+- The complete browser suite was then run independently and passed: `Running 16 tests using 1 worker`; 12 passed and 4 intentional cross-profile skips.
+- Final exact clean replay, `npm ci && npm test`: passed.
+  - Vitest: 18/18 tests passed (capacity/allocation conflicts, parallel capacity, baseline recovery, overlap boundaries, DST transitions, half-hour zones, ICS variants/recurrence/exceptions, CSV/ICS semantics, backup validation, and Playwright serialization).
   - TypeScript + Vite production build: passed; `dist/index.html` exists.
-  - Playwright: 12 passed, 4 intentionally project-skipped (desktop-only long/offline cases and mobile-only workflow/overflow cases); Chromium and Pixel 5 profiles passed.
-  - Dynamic axe scan after sample calculation: zero serious or critical violations.
-  - Offline/update coverage: the installed shell reloaded successfully with `context.setOffline(true)`; a new focused Chromium regression also confirms an uncached offline navigation shows the precached offline guide and its “Open the planner” action. The service-worker cache revision is `scs-v1.0.1`; it continues to use `skipWaiting` and `clients.claim` for updates.
-  - Console test: zero `console.error` or uncaught page errors through load, sample, and calculation.
-- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173 <temporary-evidence-dir>`: HTTP 200; title present; `lang=en`; one `h1`; main landmark; zero missing image alt text; zero console errors.
-- Privacy smoke test after sample calculation requested only `http://127.0.0.1:4173`; no analytics, CDN, or other third-party origin was contacted. `npm audit --omit=dev`: zero vulnerabilities.
-- Lighthouse 13.4.1, default mobile simulation against the production preview with the container-safe Chromium flags (`--disable-gpu --disable-dev-shm-usage`):
-  - Performance: **100**
+  - Playwright: 12 passed, 4 intentionally project-skipped; desktop Chromium and Pixel 5 projects ran serially through one worker.
+  - Browser coverage retained: complete create/import/calculate integration, keyboard tab navigation, 390px mobile overflow, dynamic axe analysis, console/page errors, installed-shell offline reload, and uncached-navigation offline fallback.
+  - Dynamic axe analysis after calculation: zero serious or critical violations.
+  - Both explicit `context.setOffline(true)` assertions passed. The service-worker update contract remains `scs-v1.0.1` with `skipWaiting`, stale-cache cleanup, and `clients.claim`.
+  - Console check: zero `console.error` or uncaught page errors through load, example setup, and calculation.
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173 <temporary-evidence-dir>`: HTTP 200, title `Shared Capacity Slots — map real service availability`, `lang=en`, one `h1`, main landmark, zero missing image alt attributes, and zero browser errors. Its simple `innerText` diagnostic reports two unlabeled buttons because two correctly text-labelled controls are inside a closed `<details>` element; the accessibility-tree axe check reports no serious/critical issue.
+- Privacy smoke test after loading and calculating the four-resource example: 4 requests, all to `http://127.0.0.1:4173`; zero third-party origins. `/privacy/`, `/terms/`, and `/manifest.webmanifest` each returned HTTP 200. `npm audit --omit=dev` found zero vulnerabilities.
+- Lighthouse 13.4.1, default mobile simulation against the production preview with Chromium 1208 and container-safe flags (`--no-sandbox --disable-gpu --disable-dev-shm-usage`):
+  - Performance: **99**
   - Accessibility: **100**
   - Best Practices: **100**
   - SEO: **100**
-  - LCP: **1.5s**, CLS: **0**, TBT: **30ms**, FCP: **0.9s**
-  - The first Lighthouse run using Chromium 1208 crashed during its final full-page screenshot after completing audits (the report still scored 100/100/100/100). The retry above passed completely, corroborating a browser-runner flake rather than an application failure.
+  - LCP: **1.4s**, CLS: **0**, TBT: **140ms**, FCP: **1.0s**
 - Production payload:
   - Initial app JavaScript: 38.32KB raw / 12.93KB gzip (budget ≤200KB)
   - CSS: 17.40KB raw / 4.71KB gzip (budget ≤50KB)
-  - Hero: 219KB desktop AVIF, 73KB mobile AVIF; 261KB desktop WebP, 93KB mobile WebP (budget ≤300KB)
+  - Hero: 157.97KB desktop AVIF, 51.85KB mobile AVIF; 266.25KB desktop WebP, 94.25KB mobile WebP (budget ≤300KB)
   - Fonts: 0KB; system stacks only
 
 ## Repair made
 
-- The original crash was not reproducible in either full clean test run, so no product change was made to paper over a runner SIGSEGV.
-- A separate reproducible offline defect was corrected: a request for an unvisited route while offline was incorrectly given the planner shell. The service worker now serves the explicit cached offline guide for that case, while an already visited page still returns from cache. The behavior is covered in `tests/e2e/app.spec.ts`.
+- Changed Playwright from fully parallel execution to one serial worker. This prevents simultaneous Chromium 1208 browser/context startup while preserving both projects, every assertion, and the no-retry policy.
+- Added `tests/unit/playwright-config.test.ts` so concurrency cannot regress without failing the unit suite.
+- Updated the README test contract and count. No product behavior, artifact class, service-worker behavior, or coverage was removed.
 
 ## Deployment
 
-- Repair commit: `c1caafee0c99bfef4b146b1411fd437c08c20fbd` (`fix: serve offline fallback for uncached routes`), pushed to `origin/main`.
+- Repair implementation commit: `bf1d95247aa52a4260f7ba7663e09644b6f8cdd2` (`fix: serialize Playwright browser contexts`).
 - Static deployment command: `/opt/fleet/lib/deploy-static.sh shared-capacity-slots /work/repo/dist`.
-- Azure Static Web Apps upload `51c15dce-e08e-4079-97c8-f75f0a89d84e` completed successfully on 2026-08-28. The deployed static app is live at `https://shared-capacity-slots.sociobot.in`.
-- Live identity check: `/opt/fleet/lib/verify-url.sh https://shared-capacity-slots.sociobot.in <temporary-evidence-dir>` returned HTTP 200, title `Shared Capacity Slots — map real service availability`, `lang=en`, one `h1`, a main landmark, zero missing image alt attributes, and zero page/console errors. `/privacy/`, `/terms/`, and `/manifest.webmanifest` each returned HTTP 200.
-- Live PWA smoke test: the deployed `/sw.js` reports cache revision `scs-v1.0.1`; after installation, an offline visit to `/not-cached-offline-route` showed “The field board is still on this device.”
+- Azure Static Web Apps deployment `b66b4299-ece6-4e31-9bdb-a729850dcea4` completed successfully in `centralus` on 2026-08-28. The custom domain returned HTTP 200 after managed-TLS readiness.
+- Artifact identity: local and live `index.html` SHA-256 both equal `be837135e6cefb191644deeb478030f27e3a6633d1b08597fb87241cde3ffa3a`; local and live `assets/index-DSOfXDWM.js` both equal `392762454a868a844f73dc43e0d9fa20311dfc38214099a25273a31aea85169d`.
+- Live identity check: `/opt/fleet/lib/verify-url.sh https://shared-capacity-slots.sociobot.in <temporary-evidence-dir>` returned HTTP 200, the expected product title, `lang=en`, one `h1`, a main landmark, zero missing image alt attributes, and zero page/console errors. `/privacy/`, `/terms/`, and `/manifest.webmanifest` each returned HTTP 200.
+- Live PWA smoke test in a fresh browser: `/sw.js` was active and controlled the page; after `context.setOffline(true)`, an uncached visit to `/not-cached-offline-route` showed “The field board is still on this device.” and its “Open the planner” action. The browser reported `navigator.onLine === false`.
 
 ## Known v1 boundaries
 
@@ -70,5 +74,4 @@ Repair verification on 2026-08-28 (base candidate `fcfc6216377ef69c0315b06441ae7
 ## Factory follow-up
 
 1. Register `shared-capacity-slots` in the Sociobot billing engine with a $29 one-time price and the production return URL.
-2. Deploy the contents of `dist/`; ensure static hosting serves directory indexes for `/privacy/` and `/terms/`.
-3. Perform a live checkout/license-return smoke test after registration.
+2. Perform a live checkout/license-return smoke test after registration.
