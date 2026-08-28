@@ -1,0 +1,11 @@
+{
+  "slug": "shared-capacity-slots",
+  "title": "Shared Capacity Slots",
+  "territory": "utilities",
+  "user": "A two-to-five-person service business with different services, staff, rooms, or equipment who needs to expose real capacity without one person’s calendar falsely blocking another service.",
+  "smallest_useful_product": "Offline capacity simulator: define people/resources/service requirements, import busy ICS blocks, calculate offerable slots, and export an availability table/ICS feed. Non-goals: public booking UI, payments, staff surveillance, or enterprise resource planning.",
+  "success_measure": "For a representative four-week schedule, its proposed slots produce zero resource conflicts and recover at least 10% more valid slots than a single shared calendar.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "ICS import must stay local by default; timezone/DST behavior needs exhaustive tests; output is advisory and must not silently create bookings."
+}
