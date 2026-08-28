@@ -1,0 +1,17 @@
+{
+  "name": "Shared Capacity Slots",
+  "short_name": "Capacity Slots",
+  "description": "Find conflict-free service capacity across people, rooms, and equipment, entirely on your device.",
+  "id": "/?source=pwa",
+  "start_url": "/?v=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f4f0e4",
+  "theme_color": "#f4f0e4",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

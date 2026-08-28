@@ -1,0 +1,27 @@
+{
+  "name": "shared-capacity-slots",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assets:icons": "node scripts/render-icons.mjs",
+    "assets:hero": "node scripts/optimize-hero.mjs",
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit && npm run build && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "sharp": "0.35.4",
+    "typescript": "5.9.2",
+    "vite": "7.3.6",
+    "vitest": "3.2.7"
+  },
+  "overrides": {
+    "playwright-core": "1.58.2"
+  }
+}
