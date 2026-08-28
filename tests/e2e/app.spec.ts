@@ -89,3 +89,13 @@ test('reloads while offline after the app shell is installed', async ({ page, co
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('See the openings a shared calendar hides.');
   await expect(page.locator('#network-status')).toContainText('Offline');
 });
+
+test('shows the cached offline guide for an uncached navigation', async ({ page, context }) => {
+  test.skip(test.info().project.name !== 'chromium', 'desktop project only');
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await context.setOffline(true);
+  await page.goto('/not-cached-offline-route');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('The field board is still on this device.');
+  await expect(page.getByRole('link', { name: 'Open the planner' })).toBeVisible();
+});

@@ -21,28 +21,35 @@ npm ci
 npm test
 ```
 
-Final local results on 2026-08-28:
+Repair verification on 2026-08-28 (base candidate `fcfc6216377ef69c0315b06441ae793e08dff3bc`):
 
-- `npm test`: passed.
+- Initial clean replay, exactly `npm ci && npm test`: passed. The reported Chromium 1208 SIGSEGV while creating an offline-test context did **not** reproduce.
+- After the repair, a second exact clean replay, `npm ci && npm test`: passed.
   - Vitest: 17/17 tests passed (allocation conflicts, parallel capacity, baseline recovery, overlap boundaries, DST transitions, half-hour zones, ICS variants/recurrence/exceptions, CSV/ICS semantics, backup validation).
   - TypeScript + Vite production build: passed; `dist/index.html` exists.
-  - Playwright: 11 passed, 3 intentionally project-skipped (desktop-only long/offline cases and mobile-only overflow case); Chromium and Pixel 5 profiles passed.
+  - Playwright: 12 passed, 4 intentionally project-skipped (desktop-only long/offline cases and mobile-only workflow/overflow cases); Chromium and Pixel 5 profiles passed.
   - Dynamic axe scan after sample calculation: zero serious or critical violations.
-  - Offline test: installed shell reloaded successfully with `context.setOffline(true)`.
+  - Offline/update coverage: the installed shell reloaded successfully with `context.setOffline(true)`; a new focused Chromium regression also confirms an uncached offline navigation shows the precached offline guide and its “Open the planner” action. The service-worker cache revision is `scs-v1.0.1`; it continues to use `skipWaiting` and `clients.claim` for updates.
   - Console test: zero `console.error` or uncaught page errors through load, sample, and calculation.
-- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173 /tmp/scs-verify`: HTTP 200; title present; `lang=en`; one `h1`; main landmark; zero missing image alt text; zero console errors.
-- Lighthouse 12.8.2, default mobile simulation against the production preview:
+- `/opt/fleet/lib/verify-url.sh http://127.0.0.1:4173 <temporary-evidence-dir>`: HTTP 200; title present; `lang=en`; one `h1`; main landmark; zero missing image alt text; zero console errors.
+- Privacy smoke test after sample calculation requested only `http://127.0.0.1:4173`; no analytics, CDN, or other third-party origin was contacted. `npm audit --omit=dev`: zero vulnerabilities.
+- Lighthouse 13.4.1, default mobile simulation against the production preview with the container-safe Chromium flags (`--disable-gpu --disable-dev-shm-usage`):
   - Performance: **100**
   - Accessibility: **100**
   - Best Practices: **100**
   - SEO: **100**
-  - LCP: **1.5s**, CLS: **0**, TBT: **0ms**, FCP: **0.9s**
+  - LCP: **1.5s**, CLS: **0**, TBT: **30ms**, FCP: **0.9s**
+  - The first Lighthouse run using Chromium 1208 crashed during its final full-page screenshot after completing audits (the report still scored 100/100/100/100). The retry above passed completely, corroborating a browser-runner flake rather than an application failure.
 - Production payload:
   - Initial app JavaScript: 38.32KB raw / 12.93KB gzip (budget ≤200KB)
   - CSS: 17.40KB raw / 4.71KB gzip (budget ≤50KB)
   - Hero: 219KB desktop AVIF, 73KB mobile AVIF; 261KB desktop WebP, 93KB mobile WebP (budget ≤300KB)
   - Fonts: 0KB; system stacks only
-- `npm audit`: zero known vulnerabilities.
+
+## Repair made
+
+- The original crash was not reproducible in either full clean test run, so no product change was made to paper over a runner SIGSEGV.
+- A separate reproducible offline defect was corrected: a request for an unvisited route while offline was incorrectly given the planner shell. The service worker now serves the explicit cached offline guide for that case, while an already visited page still returns from cache. The behavior is covered in `tests/e2e/app.spec.ts`.
 
 ## Known v1 boundaries
 

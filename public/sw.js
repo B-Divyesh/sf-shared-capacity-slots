@@ -1,4 +1,4 @@
-const VERSION = 'scs-v1.0.0';
+const VERSION = 'scs-v1.0.1';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const SHELL = [
@@ -43,7 +43,10 @@ self.addEventListener('fetch', (event) => {
           caches.open(ASSET_CACHE).then((cache) => cache.put(event.request, copy));
           return response;
         })
-        .catch(async () => (await caches.match(event.request)) || (await caches.match('/')) || caches.match('/offline.html')),
+        // A page that was not previously visited cannot safely be replaced with
+        // the planner shell: it may be a missing deep link or a first visit.
+        // Send that case to the explicit, pre-cached offline guide instead.
+        .catch(async () => (await caches.match(event.request)) || caches.match('/offline.html')),
     );
     return;
   }
