@@ -2,7 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
-  fullyParallel: true,
+  // Chromium 1208 can segfault while multiple workers create browser contexts
+  // concurrently in constrained build containers. Keep every desktop/mobile
+  // scenario, but start each context serially in a single worker.
+  fullyParallel: false,
+  workers: 1,
   retries: 0,
   reporter: 'list',
   use: {

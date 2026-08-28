@@ -39,7 +39,7 @@ npm test
 npm run build
 ```
 
-`npm test` runs 17 deterministic unit tests, a strict TypeScript production build, and Playwright flows in desktop Chromium and a 390px-class mobile viewport. The browser suite covers a complete create/import/calculate flow, keyboard navigation, axe checks, console errors, offline reload, and page overflow.
+`npm test` runs 18 deterministic unit tests, including a guard against concurrent Playwright browser contexts, a strict TypeScript production build, and Playwright flows in desktop Chromium and a 390px-class mobile viewport. The browser suite covers a complete create/import/calculate flow, keyboard navigation, axe checks, console errors, offline reload, and page overflow. Browser projects run through one worker because Chromium 1208 is unstable when multiple contexts start simultaneously in constrained build containers.
 
 The exact deploy command is `npm run build`. Static output lands in `dist/`, with `dist/index.html` at its root. Deploy that directory as-is.
 
