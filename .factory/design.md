@@ -69,6 +69,6 @@ Prompt sheet:
 - Model/deployment: `factory-image` (Azure AI Foundry).
 - Generation date: 2026-08-28.
 - License/provenance: original AI-generated artwork created for this product; no third-party source image.
-- Source candidates and prompt sidecar live in `assets/src/`; shipped WebP lives in `public/assets/` and is kept below 300KB.
+- The accepted source candidate and prompt sidecars live in `assets/src/`; responsive AVIF/WebP plus JPEG fallback live in `public/assets/`. Every shipped hero variant is below 300KB.
 
 All UI icons are original inline SVG strokes based on survey marks; no icon library or external assets are used.
