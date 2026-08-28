@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://shared-capacity-slots.sociobot.in/sitemap.xml

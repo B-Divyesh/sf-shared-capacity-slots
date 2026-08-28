@@ -86,7 +86,7 @@ function renderResources(): string {
     <li class="record-row">
       <span class="record-symbol kind-${resource.kind}" aria-hidden="true"></span>
       <div><strong>${escapeHtml(resource.name)}</strong><p>${escapeHtml(resource.kind)} · ${resource.workingHours.weekdays.map((day) => dayNames[day]).join(', ')} · ${resource.workingHours.start}–${resource.workingHours.end}</p></div>
-      <button class="icon-button danger-text" type="button" data-delete-resource="${resource.id}" aria-label="Delete ${escapeHtml(resource.name)}">Delete</button>
+      <button class="icon-button danger-text" type="button" data-delete-resource="${escapeHtml(resource.id)}" aria-label="Delete ${escapeHtml(resource.name)}">Delete</button>
     </li>`).join('') : `<li class="empty-inline"><strong>No terrain mapped yet.</strong><p>Add each person, room, or piece of equipment that can limit a service.</p></li>`;
   return `
     <div class="panel-grid">
@@ -110,7 +110,7 @@ function requirementRow(index: number): string {
   return `<fieldset class="requirement-row" data-requirement-index="${index}">
     <legend>Requirement ${index + 1}</legend>
     <div class="field-pair"><div class="field"><label for="req-label-${index}">Layer name</label><input id="req-label-${index}" name="req-label-${index}" required placeholder="e.g. Practitioner" /></div><div class="field small-field"><label for="req-quantity-${index}">Needed</label><input id="req-quantity-${index}" name="req-quantity-${index}" type="number" min="1" max="5" value="1" required /></div></div>
-    <div class="eligible-field"><span class="field-label">Eligible resources</span><div>${state.resources.map((resource) => `<label><input type="checkbox" name="req-resources-${index}" value="${resource.id}" /><span>${escapeHtml(resource.name)} <small>${resource.kind}</small></span></label>`).join('')}</div></div>
+    <div class="eligible-field"><span class="field-label">Eligible resources</span><div>${state.resources.map((resource) => `<label><input type="checkbox" name="req-resources-${index}" value="${escapeHtml(resource.id)}" /><span>${escapeHtml(resource.name)} <small>${escapeHtml(resource.kind)}</small></span></label>`).join('')}</div></div>
     ${index > 0 ? `<button type="button" class="text-button remove-requirement" data-remove-requirement>Remove this requirement</button>` : ''}
   </fieldset>`;
 }
@@ -121,7 +121,7 @@ function renderServices(): string {
     <li class="record-row service-record">
       <span class="record-symbol service-symbol" aria-hidden="true"></span>
       <div><strong>${escapeHtml(service.name)}</strong><p>${service.durationMinutes} min · ${service.requirements.map((requirement) => `${requirement.quantity} ${escapeHtml(requirement.label)} (${requirement.resourceIds.length} eligible)`).join(' + ')}</p></div>
-      <button class="icon-button danger-text" type="button" data-delete-service="${service.id}" aria-label="Delete ${escapeHtml(service.name)}">Delete</button>
+      <button class="icon-button danger-text" type="button" data-delete-service="${escapeHtml(service.id)}" aria-label="Delete ${escapeHtml(service.name)}">Delete</button>
     </li>`).join('') : `<li class="empty-inline"><strong>No service paths yet.</strong><p>Describe the alternatives and combinations that make one service possible.</p></li>`;
   return `<div class="panel-grid services-grid">
     <div><div class="panel-intro"><p class="coordinate">Layer 02 · service paths</p><h3>What does each service need?</h3><p>Resources inside one requirement are alternatives. Separate requirements must all be satisfied.</p></div><ul class="record-list">${cards}</ul></div>
@@ -142,13 +142,13 @@ function renderBusy(): string {
   return `<div class="panel-grid">
     <div><div class="panel-intro"><p class="coordinate">Layer 03 · occupied contours</p><h3>Subtract known busy time</h3><p>Export an .ics file from each existing calendar, then attach it to the matching resource. Files are parsed in this browser only.</p></div>
       <form id="ics-form" class="survey-form compact-form">
-        <div class="field"><label for="ics-resource">Calendar belongs to</label><select id="ics-resource" name="resourceId">${state.resources.map((resource) => `<option value="${resource.id}">${escapeHtml(resource.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="ics-resource">Calendar belongs to</label><select id="ics-resource" name="resourceId">${state.resources.map((resource) => `<option value="${escapeHtml(resource.id)}">${escapeHtml(resource.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="ics-file">ICS calendar file</label><input id="ics-file" name="ics" type="file" accept=".ics,text/calendar" required /><small>The file never leaves this device.</small></div>
         <p class="form-error" id="ics-error" aria-live="polite"></p><button class="primary-button" type="submit">Import busy time</button>
       </form>
     </div>
     <div><div class="list-heading"><h3>Imported blocks</h3><span>${blocks.length}</span></div>
-      ${blocks.length ? `<ul class="record-list busy-list">${blocks.map((block) => `<li class="record-row"><span class="busy-hatch" aria-hidden="true"></span><div><strong>${escapeHtml(block.summary)}</strong><p>${escapeHtml(resourceLabel(block.resourceId))} · ${formatDateTime(block.start)} → ${formatDateTime(block.end)}<br /><small>${escapeHtml(block.source)}</small></p></div><button class="icon-button danger-text" type="button" data-delete-block="${block.id}" aria-label="Delete busy block ${escapeHtml(block.summary)}">Delete</button></li>`).join('')}</ul>` : `<div class="empty-inline"><strong>No busy time imported.</strong><p>The calculator can run now, but it will treat every working hour as open.</p></div>`}
+      ${blocks.length ? `<ul class="record-list busy-list">${blocks.map((block) => `<li class="record-row"><span class="busy-hatch" aria-hidden="true"></span><div><strong>${escapeHtml(block.summary)}</strong><p>${escapeHtml(resourceLabel(block.resourceId))} · ${formatDateTime(block.start)} → ${formatDateTime(block.end)}<br /><small>${escapeHtml(block.source)}</small></p></div><button class="icon-button danger-text" type="button" data-delete-block="${escapeHtml(block.id)}" aria-label="Delete busy block ${escapeHtml(block.summary)}">Delete</button></li>`).join('')}</ul>` : `<div class="empty-inline"><strong>No busy time imported.</strong><p>The calculator can run now, but it will treat every working hour as open.</p></div>`}
     </div>
   </div>`;
 }
@@ -166,7 +166,7 @@ function resultsMarkup(service: Service): string {
   return `<div class="result-summary" aria-live="polite">
     <div><strong>${calculation.offeredCount}</strong><span>offerable starts</span></div><div><strong>${calculation.recoveredCount}</strong><span>shared-calendar blocks avoided</span></div><div><strong>${recovery}</strong><span>capacity recovered</span></div>
   </div>
-  ${calculation.slots.length ? `<div class="slot-map"><div class="slot-map-key"><span><i></i> Offerable start</span><span>Number = parallel capacity</span></div>${[...byDay.entries()].map(([, slots]) => `<div class="slot-day"><h4>${new Intl.DateTimeFormat(undefined, { timeZone: state.timezone, weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(slots[0].start))}</h4><div>${slots.map((slot) => `<span class="slot-chip" title="Example path: ${slot.exampleResourceIds.map(resourceLabel).join(', ')}">${new Intl.DateTimeFormat(undefined, { timeZone: state.timezone, hour: 'numeric', minute: '2-digit' }).format(new Date(slot.start))}<b>×${slot.capacity}</b></span>`).join('')}</div></div>`).join('')}</div>
+  ${calculation.slots.length ? `<div class="slot-map"><div class="slot-map-key"><span><i></i> Offerable start</span><span>Number = parallel capacity</span></div>${[...byDay.entries()].map(([, slots]) => `<div class="slot-day"><h4>${new Intl.DateTimeFormat(undefined, { timeZone: state.timezone, weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(slots[0].start))}</h4><div>${slots.map((slot) => `<span class="slot-chip" title="Example path: ${escapeHtml(slot.exampleResourceIds.map(resourceLabel).join(', '))}">${new Intl.DateTimeFormat(undefined, { timeZone: state.timezone, hour: 'numeric', minute: '2-digit' }).format(new Date(slot.start))}<b>×${slot.capacity}</b></span>`).join('')}</div></div>`).join('')}</div>
   <div class="export-row"><button type="button" class="quiet-button" id="export-csv">Export availability CSV</button><button type="button" class="quiet-button" id="export-ics">Export advisory ICS</button></div>` : `<div class="no-slots"><strong>No conflict-free slots in this range.</strong><p>Check working hours, eligible resource groups, and imported busy time, then survey again.</p></div>`}
   <p class="advisory-note"><strong>Advisory only.</strong> Results are calculations, not reservations. Recheck source calendars before accepting a booking.</p>`;
 }
@@ -177,7 +177,7 @@ function renderResults(): string {
   return `<div class="results-layout">
     <form id="calculation-form" class="survey-form result-controls">
       <p class="coordinate">Layer 04 · clear contours</p><h3>Survey offerable starts</h3>
-      <div class="field"><label for="result-service">Service</label><select id="result-service" name="serviceId">${state.services.map((service) => `<option value="${service.id}" ${selected.id === service.id ? 'selected' : ''}>${escapeHtml(service.name)} · ${service.durationMinutes} min</option>`).join('')}</select></div>
+      <div class="field"><label for="result-service">Service</label><select id="result-service" name="serviceId">${state.services.map((service) => `<option value="${escapeHtml(service.id)}" ${selected.id === service.id ? 'selected' : ''}>${escapeHtml(service.name)} · ${service.durationMinutes} min</option>`).join('')}</select></div>
       <div class="field"><label for="result-start">Start date</label><input id="result-start" name="startDate" type="date" value="${localToday()}" required /></div>
       <div class="field"><label for="result-days">Planning horizon</label><select id="result-days" name="days"><option value="7">7 days</option><option value="14" selected>14 days · free</option><option value="28" ${isUnlocked ? '' : 'disabled'}>28 days${isUnlocked ? ' · unlocked' : ' · field kit'}</option></select></div>
       <div class="field-pair"><div class="field"><label for="result-timezone">Timezone</label><input id="result-timezone" name="timezone" value="${escapeHtml(state.timezone)}" required aria-describedby="timezone-help" /></div><div class="field small-field"><label for="result-step">Start every</label><select id="result-step" name="step"><option value="15" ${state.slotStepMinutes === 15 ? 'selected' : ''}>15 min</option><option value="30" ${state.slotStepMinutes === 30 ? 'selected' : ''}>30 min</option><option value="60" ${state.slotStepMinutes === 60 ? 'selected' : ''}>60 min</option></select></div></div>

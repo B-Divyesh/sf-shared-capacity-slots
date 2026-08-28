@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { calculationToCsv, calculationToIcs } from '../../src/exporters';
+import { calculationToCsv, calculationToIcs, jsonToState } from '../../src/exporters';
 import type { Calculation, Service } from '../../src/types';
 
 const service: Service = { id: 's', name: 'Room, consult', durationMinutes: 60, requirements: [] };
@@ -24,5 +24,9 @@ describe('availability export', () => {
     expect(ics).toContain('BEGIN:VFREEBUSY');
     expect(ics).toContain('FREEBUSY;FBTYPE=FREE:20260828T090000Z/20260828T100000Z');
     expect(ics).not.toContain('BEGIN:VEVENT');
+  });
+
+  it('rejects malformed backup data before it can reach the interface', () => {
+    expect(() => jsonToState(JSON.stringify({ product: 'shared-capacity-slots', state: { version: 1, resources: [{ id: '\"><script>', name: 'bad' }] } }))).toThrow(/not a valid/);
   });
 });

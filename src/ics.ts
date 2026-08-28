@@ -61,14 +61,21 @@ function recurrenceStarts(event: string[], start: ParsedDate, startParams: strin
     const separator = part.indexOf('=');
     return [part.slice(0, separator).toUpperCase(), part.slice(separator + 1)];
   }));
+  const supportedFields = new Set(['FREQ', 'INTERVAL', 'COUNT', 'UNTIL', 'BYDAY', 'BYMONTHDAY', 'WKST']);
+  const unsupported = Object.keys(fields).find((field) => !supportedFields.has(field));
+  if (unsupported) throw new Error(`Unsupported recurrence field: ${unsupported}`);
   const frequency = fields.FREQ;
   if (!['DAILY', 'WEEKLY', 'MONTHLY'].includes(frequency)) throw new Error(`Unsupported recurrence frequency: ${frequency || 'missing'}`);
+  if (frequency === 'WEEKLY' && fields.BYMONTHDAY) throw new Error('BYMONTHDAY is not supported for weekly recurrence');
+  if (frequency === 'MONTHLY' && fields.BYDAY) throw new Error('BYDAY is not supported for monthly recurrence');
   const interval = Math.max(1, Number(fields.INTERVAL ?? 1));
   const count = fields.COUNT ? Math.max(1, Number(fields.COUNT)) : Number.POSITIVE_INFINITY;
   const until = fields.UNTIL ? parseIcsDate(fields.UNTIL, startParams, defaultTimeZone).date : null;
   const byDays = (fields.BYDAY ?? '').split(',').filter(Boolean).map((value) => value.slice(-2));
   const byMonthDays = (fields.BYMONTHDAY ?? String(start.local.day)).split(',').map(Number);
   const weekdayCodes = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const weekStart = weekdayCodes.indexOf(fields.WKST ?? 'MO');
+  if (weekStart < 0 || byDays.some((day) => !weekdayCodes.includes(day))) throw new Error('Unsupported recurrence weekday');
   const originalKey = dateKey(start.local);
   const now = partsInZone(new Date(), start.timeZone);
   const windowStart = addLocalDays(dateKey(now), -370);
@@ -90,10 +97,13 @@ function recurrenceStarts(event: string[], start: ParsedDate, startParams: strin
     const candidateDate = new Date(`${candidateKey}T12:00:00Z`);
     const originalDate = new Date(`${originalKey}T12:00:00Z`);
     const monthDifference = (candidateDate.getUTCFullYear() - originalDate.getUTCFullYear()) * 12 + candidateDate.getUTCMonth() - originalDate.getUTCMonth();
+    const originalWeekStart = addLocalDays(originalKey, -((weekdayOfLocalDate(originalKey) - weekStart + 7) % 7));
+    const candidateWeekStart = addLocalDays(candidateKey, -((candidateWeekday - weekStart + 7) % 7));
+    const weekDifference = daysBetween(originalWeekStart, candidateWeekStart) / 7;
     const matches = frequency === 'DAILY'
-      ? difference % interval === 0
+      ? difference % interval === 0 && (byDays.length === 0 || byDays.includes(weekdayCodes[candidateWeekday]))
       : frequency === 'WEEKLY'
-        ? Math.floor(difference / 7) % interval === 0 && (byDays.length ? byDays.includes(weekdayCodes[candidateWeekday]) : candidateWeekday === weekdayOfLocalDate(originalKey))
+        ? weekDifference % interval === 0 && (byDays.length ? byDays.includes(weekdayCodes[candidateWeekday]) : candidateWeekday === weekdayOfLocalDate(originalKey))
         : monthDifference >= 0 && monthDifference % interval === 0 && byMonthDays.includes(candidateDate.getUTCDate());
     if (matches) {
       seen += 1;
@@ -160,7 +170,7 @@ export function parseIcs(text: string, resourceId: string, source: string, defau
       const summaryLine = find('SUMMARY');
       const summary = summaryLine ? unescapeText(splitLine(summaryLine)[1]) : 'Busy';
       const uidLine = find('UID');
-      const uid = uidLine ? splitLine(uidLine)[1] : `${start.date.getTime()}-${index}`;
+      const uid = (uidLine ? splitLine(uidLine)[1] : `${start.date.getTime()}-${index}`).replace(/[^a-zA-Z0-9_.@-]/g, '_');
       const duration = endDate.getTime() - start.date.getTime();
       const occurrences = recurrenceStarts(event, start, startParams, defaultTimeZone);
       occurrences.forEach((occurrence, occurrenceIndex) => blocks.push({
