@@ -1,0 +1,15 @@
+{
+  "slug": "shared-capacity-slots",
+  "name": "Shared Capacity Slots Field Kit",
+  "price_minor": 2900,
+  "currency": "USD",
+  "price_type": "one_time_price",
+  "return_url": "https://shared-capacity-slots.sociobot.in/",
+  "price_evidence": "The live pricing section and terms state a $29 one-time purchase.",
+  "paid_features": [
+    "28-day planning horizon",
+    "unlimited saved resources",
+    "unlimited saved services"
+  ],
+  "license_validation_path": "/api/v1/products/shared-capacity-slots/verify"
+}

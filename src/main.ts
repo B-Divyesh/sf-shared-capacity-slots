@@ -9,11 +9,12 @@ import type { AppState, Calculation, Resource, ResourceKind, Service } from './t
 
 type Step = 'resources' | 'services' | 'busy' | 'results';
 
+const isDemo = new URL(window.location.href).searchParams.get('demo') === '1';
 let state = emptyState();
 let activeStep: Step = 'resources';
 let calculation: Calculation | null = null;
 let calculatedServiceId = '';
-let isUnlocked = optimisticLicenseState().unlocked;
+let isUnlocked = !isDemo && optimisticLicenseState().unlocked;
 let deferredInstall: (Event & { prompt?: () => Promise<void> }) | null = null;
 
 const root = document.querySelector<HTMLElement>('#planner-root')!;
@@ -44,6 +45,10 @@ function announce(message: string): void {
 async function persist(message: string): Promise<void> {
   state.history.unshift({ id: id('history'), at: new Date().toISOString(), message });
   state.history = state.history.slice(0, 20);
+  if (isDemo) {
+    announce('Demo change made · nothing saved');
+    return;
+  }
   await saveState(state);
   announce('Saved on this device');
 }
@@ -87,11 +92,11 @@ function renderResources(): string {
       <span class="record-symbol kind-${resource.kind}" aria-hidden="true"></span>
       <div><strong>${escapeHtml(resource.name)}</strong><p>${escapeHtml(resource.kind)} · ${resource.workingHours.weekdays.map((day) => dayNames[day]).join(', ')} · ${resource.workingHours.start}–${resource.workingHours.end}</p></div>
       <button class="icon-button danger-text" type="button" data-delete-resource="${escapeHtml(resource.id)}" aria-label="Delete ${escapeHtml(resource.name)}">Delete</button>
-    </li>`).join('') : `<li class="empty-inline"><strong>No terrain mapped yet.</strong><p>Add each person, room, or piece of equipment that can limit a service.</p></li>`;
+    </li>`).join('') : `<li class="empty-inline"><strong>No resources yet.</strong><p>Add each person, room, or piece of equipment that can limit a service.</p></li>`;
   return `
     <div class="panel-grid">
       <div>
-        <div class="panel-intro"><p class="coordinate">Layer 01 · resource terrain</p><h3>What can be occupied?</h3><p>Each resource has one regular daily window. Busy calendar events will be subtracted later.</p></div>
+        <div class="panel-intro"><p class="coordinate">Step 1 · resources</p><h3>Add people, rooms, and equipment</h3><p>Each resource has one regular daily window. You can import its busy events later.</p></div>
         <ul class="record-list">${resourceCards}</ul>
       </div>
       <form id="resource-form" class="survey-form">
@@ -109,9 +114,9 @@ function renderResources(): string {
 function requirementRow(index: number): string {
   return `<fieldset class="requirement-row" data-requirement-index="${index}">
     <legend>Requirement ${index + 1}</legend>
-    <div class="field-pair"><div class="field"><label for="req-label-${index}">Layer name</label><input id="req-label-${index}" name="req-label-${index}" required placeholder="e.g. Practitioner" /></div><div class="field small-field"><label for="req-quantity-${index}">Needed</label><input id="req-quantity-${index}" name="req-quantity-${index}" type="number" min="1" max="5" value="1" required /></div></div>
+    <div class="field-pair"><div class="field"><label for="req-label-${index}">Requirement name</label><input id="req-label-${index}" name="req-label-${index}" required placeholder="e.g. Practitioner" /></div><div class="field small-field"><label for="req-quantity-${index}">Needed</label><input id="req-quantity-${index}" name="req-quantity-${index}" type="number" min="1" max="5" value="1" required /></div></div>
     <div class="eligible-field"><span class="field-label">Eligible resources</span><div>${state.resources.map((resource) => `<label><input type="checkbox" name="req-resources-${index}" value="${escapeHtml(resource.id)}" /><span>${escapeHtml(resource.name)} <small>${escapeHtml(resource.kind)}</small></span></label>`).join('')}</div></div>
-    ${index > 0 ? `<button type="button" class="text-button remove-requirement" data-remove-requirement>Remove this requirement</button>` : ''}
+    ${index > 0 ? `<button type="button" class="text-button remove-requirement" data-remove-requirement>Remove requirement</button>` : ''}
   </fieldset>`;
 }
 
@@ -122,14 +127,14 @@ function renderServices(): string {
       <span class="record-symbol service-symbol" aria-hidden="true"></span>
       <div><strong>${escapeHtml(service.name)}</strong><p>${service.durationMinutes} min · ${service.requirements.map((requirement) => `${requirement.quantity} ${escapeHtml(requirement.label)} (${requirement.resourceIds.length} eligible)`).join(' + ')}</p></div>
       <button class="icon-button danger-text" type="button" data-delete-service="${escapeHtml(service.id)}" aria-label="Delete ${escapeHtml(service.name)}">Delete</button>
-    </li>`).join('') : `<li class="empty-inline"><strong>No service paths yet.</strong><p>Describe the alternatives and combinations that make one service possible.</p></li>`;
+    </li>`).join('') : `<li class="empty-inline"><strong>No services yet.</strong><p>Describe the resources that make each service possible.</p></li>`;
   return `<div class="panel-grid services-grid">
-    <div><div class="panel-intro"><p class="coordinate">Layer 02 · service paths</p><h3>What does each service need?</h3><p>Resources inside one requirement are alternatives. Separate requirements must all be satisfied.</p></div><ul class="record-list">${cards}</ul></div>
+    <div><div class="panel-intro"><p class="coordinate">Step 2 · services</p><h3>Define each service</h3><p>Resources inside one requirement are alternatives. Separate requirements must all be satisfied.</p></div><ul class="record-list">${cards}</ul></div>
     <form id="service-form" class="survey-form wide-form">
       <h3>Add a service</h3>
       <div class="field-pair"><div class="field"><label for="service-name">Service name</label><input id="service-name" name="name" required maxlength="60" placeholder="e.g. Initial consultation" /></div><div class="field small-field"><label for="service-duration">Minutes</label><input id="service-duration" name="duration" type="number" min="15" max="480" step="15" value="60" required /></div></div>
       <div id="requirements-root">${requirementRow(0)}</div>
-      <button type="button" class="text-button" id="add-requirement">+ Add another required layer</button>
+      <button type="button" class="text-button" id="add-requirement">+ Add another requirement</button>
       <p class="form-error" id="service-error" aria-live="polite"></p>
       <button class="primary-button" type="submit">Add service</button>
     </form>
@@ -140,7 +145,7 @@ function renderBusy(): string {
   if (state.resources.length === 0) return `<div class="gated-empty"><span aria-hidden="true">01 → 03</span><h3>Map resources first</h3><p>Busy time must belong to a specific person, room, or piece of equipment.</p><button class="primary-button" type="button" data-step="resources">Go to resources</button></div>`;
   const blocks = [...state.busyBlocks].sort((a, b) => a.start.localeCompare(b.start));
   return `<div class="panel-grid">
-    <div><div class="panel-intro"><p class="coordinate">Layer 03 · occupied contours</p><h3>Subtract known busy time</h3><p>Export an .ics file from each existing calendar, then attach it to the matching resource. Files are parsed in this browser only.</p></div>
+    <div><div class="panel-intro"><p class="coordinate">Step 3 · busy time</p><h3>Import existing busy time</h3><p>Export an .ics file from each calendar, then attach it to the matching resource. This browser reads the file.</p></div>
       <form id="ics-form" class="survey-form compact-form">
         <div class="field"><label for="ics-resource">Calendar belongs to</label><select id="ics-resource" name="resourceId">${state.resources.map((resource) => `<option value="${escapeHtml(resource.id)}">${escapeHtml(resource.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="ics-file">ICS calendar file</label><input id="ics-file" name="ics" type="file" accept=".ics,text/calendar" required /><small>The file never leaves this device.</small></div>
@@ -154,7 +159,7 @@ function renderBusy(): string {
 }
 
 function resultsMarkup(service: Service): string {
-  if (!calculation || calculatedServiceId !== service.id) return `<div class="results-empty"><div class="mini-map" aria-hidden="true"><i></i><i></i><i></i></div><h3>Ready to survey</h3><p>Choose a horizon and calculate. No calendar is changed.</p></div>`;
+  if (!calculation || calculatedServiceId !== service.id) return `<div class="results-empty"><div class="mini-map" aria-hidden="true"><i></i><i></i><i></i></div><h3>Ready to calculate</h3><p>Choose a date range and calculate. No calendar is changed.</p></div>`;
   const byDay = new Map<string, typeof calculation.slots>();
   for (const slot of calculation.slots) {
     const date = new Intl.DateTimeFormat('en-CA', { timeZone: state.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(slot.start));
@@ -176,7 +181,7 @@ function renderResults(): string {
   const selected = state.services.find((service) => service.id === calculatedServiceId) ?? state.services[0];
   return `<div class="results-layout">
     <form id="calculation-form" class="survey-form result-controls">
-      <p class="coordinate">Layer 04 · clear contours</p><h3>Survey offerable starts</h3>
+      <p class="coordinate">Step 4 · results</p><h3>Calculate offerable starts</h3>
       <div class="field"><label for="result-service">Service</label><select id="result-service" name="serviceId">${state.services.map((service) => `<option value="${escapeHtml(service.id)}" ${selected.id === service.id ? 'selected' : ''}>${escapeHtml(service.name)} · ${service.durationMinutes} min</option>`).join('')}</select></div>
       <div class="field"><label for="result-start">Start date</label><input id="result-start" name="startDate" type="date" value="${localToday()}" required /></div>
       <div class="field"><label for="result-days">Planning horizon</label><select id="result-days" name="days"><option value="7">7 days</option><option value="14" selected>14 days · free</option><option value="28" ${isUnlocked ? '' : 'disabled'}>28 days${isUnlocked ? ' · unlocked' : ' · field kit'}</option></select></div>
@@ -190,7 +195,7 @@ function renderResults(): string {
 }
 
 function renderDataControls(): string {
-  return `<details class="data-controls"><summary>Your data & change history</summary><div class="data-controls-grid"><div><h3>Your plan belongs to you</h3><p>Export a complete JSON backup or restore one on another device. Nothing syncs to a server.</p><div class="button-row"><button type="button" class="quiet-button" id="export-json">Export backup</button><label class="quiet-button file-button" for="import-json">Import backup<input id="import-json" type="file" accept="application/json,.json" /></label><button type="button" class="text-button danger-text" id="clear-plan">Clear local plan</button></div></div><div><h3>Recent local changes</h3>${state.history.length ? `<ol class="history-list">${state.history.slice(0, 6).map((entry) => `<li><time datetime="${entry.at}">${new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(entry.at))}</time>${escapeHtml(entry.message)}</li>`).join('')}</ol>` : '<p>No changes recorded yet.</p>'}</div></div></details>`;
+  return `<details class="data-controls"><summary>Your data and change history</summary><div class="data-controls-grid"><div><h3>${isDemo ? 'Demo data is temporary' : 'Your plan belongs to you'}</h3><p>${isDemo ? 'Try every control here. Demo changes stay in memory and are discarded when you leave.' : 'Export a complete JSON backup or restore one on another device. Nothing syncs to a server.'}</p><div class="button-row"><button type="button" class="quiet-button" id="export-json" aria-label="Export backup">Export backup</button><label class="quiet-button file-button" for="import-json">Import backup<input id="import-json" type="file" accept="application/json,.json" /></label><button type="button" class="text-button danger-text" id="clear-plan" aria-label="Clear ${isDemo ? 'demo' : 'local plan'}">Clear ${isDemo ? 'demo' : 'local plan'}</button></div></div><div><h3>Recent local changes</h3>${state.history.length ? `<ol class="history-list">${state.history.slice(0, 6).map((entry) => `<li><time datetime="${entry.at}">${new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(entry.at))}</time>${escapeHtml(entry.message)}</li>`).join('')}</ol>` : '<p>No changes recorded yet.</p>'}</div></div></details>`;
 }
 
 function render(): void {
@@ -238,19 +243,26 @@ function sampleState(): AppState {
       block(room, 2, '09:00', '11:00', 'Room maintenance'),
       block(maya, 3, '14:00', '17:00', 'Off-site visit'),
     ],
-    history: [{ id: id('history'), at: new Date().toISOString(), message: 'Loaded the four-resource example' }],
+    history: [{ id: id('history'), at: new Date().toISOString(), message: 'Loaded sample data' }],
   };
 }
 
-async function loadExample(): Promise<void> {
-  if ((state.resources.length || state.services.length) && !window.confirm('Replace your current local plan with the four-resource example?')) return;
+function resetDemo(): void {
   state = sampleState();
-  calculation = null;
+  const service = state.services[0];
+  calculation = calculateSlots({
+    resources: state.resources,
+    service,
+    busyBlocks: state.busyBlocks,
+    timezone: state.timezone,
+    startDate: localToday(),
+    days: 14,
+    stepMinutes: state.slotStepMinutes,
+  });
+  calculatedServiceId = service.id;
   activeStep = 'results';
-  await saveState(state);
-  announce('Example saved on this device');
+  announce('Demo ready · sample data, nothing saved');
   render();
-  document.querySelector('#planner')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 function setError(idValue: string, message: string): void {
@@ -310,12 +322,13 @@ root.addEventListener('click', async (event) => {
   }
   if (target.closest('#export-json')) downloadFile(stateToJson(state), 'shared-capacity-plan.json', 'application/json');
   if (target.closest('#clear-plan')) {
-    if (!window.confirm('Clear every resource, service, and busy block stored on this device? Export a backup first if you may need it.')) return;
-    await clearState();
+    const targetName = isDemo ? 'this demo plan' : 'every resource, service, and busy block stored on this device';
+    if (!window.confirm(`Clear ${targetName}? Export a backup first if you may need it.`)) return;
+    if (!isDemo) await clearState();
     state = emptyState();
     calculation = null;
     activeStep = 'resources';
-    announce('Local plan cleared');
+    announce(isDemo ? 'Demo plan cleared · nothing saved' : 'Local plan cleared');
     render();
   }
   if (target.closest('#export-csv') && calculation) {
@@ -442,7 +455,18 @@ root.addEventListener('change', async (event) => {
   }
 });
 
-document.querySelector('#load-example-hero')?.addEventListener('click', loadExample);
+document.querySelector('#reset-demo')?.addEventListener('click', () => {
+  resetDemo();
+  document.querySelector<HTMLElement>('#planner')?.focus();
+});
+
+document.querySelector<HTMLAnchorElement>('.skip-link')?.addEventListener('click', (event) => {
+  event.preventDefault();
+  history.pushState(null, '', '#planner');
+  const planner = document.querySelector<HTMLElement>('#planner');
+  planner?.focus();
+  planner?.scrollIntoView({ block: 'start' });
+});
 
 document.querySelector<HTMLFormElement>('#restore-license')?.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -485,11 +509,13 @@ document.querySelector('#install-app')?.addEventListener('click', async () => {
 async function registerServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator)) return;
   try {
+    const existing = await navigator.serviceWorker.getRegistration();
+    const hadInstalledWorker = Boolean(existing?.active || navigator.serviceWorker.controller);
     const registration = await navigator.serviceWorker.register('/sw.js');
     registration.addEventListener('updatefound', () => {
       const worker = registration.installing;
       worker?.addEventListener('statechange', () => {
-        if (worker.state === 'activated' && navigator.serviceWorker.controller) showToast('App updated. Reload when convenient.');
+        if (worker.state === 'activated' && hadInstalledWorker) showToast('Update available. Reload to use it.');
       });
     });
   } catch {
@@ -498,8 +524,15 @@ async function registerServiceWorker(): Promise<void> {
 }
 
 async function init(): Promise<void> {
-  captureLicenseFromUrl();
-  isUnlocked = optimisticLicenseState().unlocked;
+  document.title = isDemo ? 'Demo — Shared Capacity Slots' : 'Shared Capacity Slots — Find team availability';
+  document.querySelector<HTMLElement>('#demo-banner')!.hidden = !isDemo;
+  if (!isDemo) captureLicenseFromUrl();
+  isUnlocked = !isDemo && optimisticLicenseState().unlocked;
+  if (isDemo) {
+    resetDemo();
+    void registerServiceWorker();
+    return;
+  }
   try {
     state = await loadState();
     announce('Saved locally · no cloud account');

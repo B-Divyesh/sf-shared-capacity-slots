@@ -4,13 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f4f0e4" />
-    <meta name="description" content="Find real service capacity across people, rooms, and equipment. Your calendar data stays on your device." />
+    <meta name="description" content="Find open service times across staff, rooms, and equipment. Import calendars locally and export advisory availability." />
+    <link rel="canonical" href="https://shared-capacity-slots.sociobot.in/" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/assets/mark.svg" type="image/svg+xml" />
-    <title>Shared Capacity Slots — map real service availability</title>
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Shared Capacity Slots — Find team availability" />
+    <meta property="og:description" content="Find open service times across staff, rooms, and equipment without merging every calendar." />
+    <meta property="og:url" content="https://shared-capacity-slots.sociobot.in/" />
+    <meta property="og:image" content="https://shared-capacity-slots.sociobot.in/assets/social-card.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Shared Capacity Slots — Find team availability" />
+    <meta name="twitter:description" content="Find open service times across staff, rooms, and equipment without merging every calendar." />
+    <meta name="twitter:image" content="https://shared-capacity-slots.sociobot.in/assets/social-card.jpg" />
+    <title>Shared Capacity Slots — Find team availability</title>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to planner</a>
+    <a class="skip-link" href="#planner">Skip to planner</a>
     <header class="site-header">
       <a class="wordmark" href="/" aria-label="Shared Capacity Slots home">
         <svg aria-hidden="true" viewBox="0 0 48 48" width="36" height="36">
@@ -20,27 +31,33 @@
         <span>Shared Capacity<br /><small>Slots</small></span>
       </a>
       <nav aria-label="Main navigation">
+        <a href="/?demo=1">Demo</a>
         <a href="#planner">Planner</a>
-        <a href="#method">Method</a>
-        <a href="#upgrade">Field kit</a>
+        <a href="/privacy/">Privacy</a>
       </nav>
       <button class="quiet-button install-button" id="install-app" type="button" hidden>Install app</button>
     </header>
 
+    <aside class="demo-banner" id="demo-banner" aria-label="Demo mode" hidden>
+      <strong>Demo — sample data, nothing is saved</strong>
+      <div><button class="quiet-button inverse" id="reset-demo" type="button">Reset demo</button><a href="/">Start for real</a></div>
+    </aside>
+
     <main id="main">
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-copy">
-          <p class="eyebrow">Local capacity survey · no account</p>
-          <h1 id="page-title">See the openings a shared calendar hides.</h1>
-          <p class="hero-lede">Map the people, rooms, and equipment each service actually needs. Import their busy calendars, then uncover conflict-free slots without sending calendar data anywhere.</p>
+          <p class="eyebrow">Local capacity planner · no account</p>
+          <h1 id="page-title">Find service capacity across your team</h1>
+          <p class="hero-lede">For small service teams, it finds open times across staff, rooms, and equipment without one calendar blocking the rest.</p>
           <div class="hero-actions">
-            <a class="primary-button" href="#planner">Map my capacity</a>
-            <button class="text-button" id="load-example-hero" type="button">Try the four-resource example</button>
+            <a class="primary-button" href="/?demo=1">Try it with sample data</a>
+            <a class="text-button" href="#planner">Start with my plan</a>
           </div>
-          <ul class="trust-list" aria-label="Product guarantees">
-            <li><span aria-hidden="true">⌁</span> Works offline</li>
-            <li><span aria-hidden="true">⌁</span> ICS stays local</li>
-            <li><span aria-hidden="true">⌁</span> Advisory only</li>
+          <p class="action-note">The sample opens a four-resource studio plan with calculated results.</p>
+          <ul class="trust-list" aria-label="Product facts">
+            <li><span aria-hidden="true">⌁</span> Works offline after the first visit</li>
+            <li><span aria-hidden="true">⌁</span> Calendar files stay on this device</li>
+            <li><span aria-hidden="true">⌁</span> Free for 14-day plans</li>
           </ul>
         </div>
         <figure class="hero-map">
@@ -51,49 +68,48 @@
             <source srcset="/assets/capacity-relief.webp" type="image/webp" />
             <img src="/assets/capacity-relief.jpg" width="1280" height="853" alt="An abstract contour map where green routes curve around red blocked zones toward clear openings" fetchpriority="high" decoding="async" />
           </picture>
-          <figcaption><span>Plate 01</span> Capacity has layers. Follow the open contour, not the busiest calendar.</figcaption>
+          <figcaption><span>Capacity view</span> Separate lines show which resources remain available for a service.</figcaption>
         </figure>
       </section>
 
-      <section class="planner-shell" id="planner" aria-labelledby="planner-title">
+      <section class="planner-shell" id="planner" aria-labelledby="planner-title" tabindex="-1">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Your private field board</p>
+            <p class="eyebrow">Saved in this browser</p>
             <h2 id="planner-title">Capacity planner</h2>
           </div>
           <p id="save-status" class="save-status" role="status">Loading your local plan…</p>
         </div>
         <div id="planner-root" aria-busy="true">
-          <div class="loading-state"><span class="contour-loader" aria-hidden="true"></span><p>Reading the map on this device…</p></div>
+          <div class="loading-state"><span class="contour-loader" aria-hidden="true"></span><p>Loading your plan from this device…</p></div>
         </div>
       </section>
 
       <section class="method-section" id="method" aria-labelledby="method-title">
         <div class="section-heading narrow">
           <div>
-            <p class="eyebrow">Why the maths is different</p>
-            <h2 id="method-title">One service, several possible paths</h2>
+            <p class="eyebrow">How it works</p>
+            <h2 id="method-title">Calculate availability in three steps</h2>
           </div>
           <p>A slot is offered only when every requirement can be assigned a distinct, available resource for the full service duration.</p>
         </div>
         <ol class="method-grid">
-          <li><span>01</span><h3>Describe the layers</h3><p>Name your people, spaces, and kit, including their usual working days and hours.</p></li>
-          <li><span>02</span><h3>Trace each service</h3><p>Define alternatives precisely: one of two trained people, plus one suitable room, for example.</p></li>
-          <li><span>03</span><h3>Subtract busy terrain</h3><p>Import each resource’s ICS file locally. The engine rejects every overlapping assignment.</p></li>
-          <li><span>04</span><h3>Export the clearings</h3><p>Share the resulting table or advisory free-time ICS. Nothing is silently booked.</p></li>
+          <li><span>01</span><h3>Define resources and services</h3><p>Add working hours and the people, rooms, or equipment each service needs.</p></li>
+          <li><span>02</span><h3>Import busy time</h3><p>Attach each ICS file to its resource. The file stays in this browser.</p></li>
+          <li><span>03</span><h3>Calculate and export</h3><p>Review conflict-free starts, then export CSV or advisory free-time ICS.</p></li>
         </ol>
       </section>
 
       <section class="upgrade-section" id="upgrade" aria-labelledby="upgrade-title">
         <div class="upgrade-mark" aria-hidden="true">4×</div>
         <div>
-          <p class="eyebrow">Permanent field kit</p>
-          <h2 id="upgrade-title">Plan the full four-week horizon.</h2>
-          <p>Free covers up to 14 days. A <strong>$29 one-time purchase</strong> unlocks 28-day planning, unlimited saved resources and services, and future paid features on this device—no subscription.</p>
+          <p class="eyebrow">One-time field kit</p>
+          <h2 id="upgrade-title">Plan four weeks at a time</h2>
+          <p>Free covers 14 days. A <strong>$29 one-time purchase</strong> unlocks 28-day planning plus unlimited saved resources and services.</p>
           <p class="merchant-note">Checkout and refunds are handled by Sociobot/Dodo, the merchant of record.</p>
         </div>
         <div class="upgrade-actions">
-          <a class="primary-button inverse" href="https://api.sociobot.in/api/v1/products/shared-capacity-slots/checkout" target="_blank" rel="noopener">Buy the field kit — $29</a>
+          <a class="primary-button inverse" href="https://api.sociobot.in/api/v1/products/shared-capacity-slots/checkout" target="_blank" rel="noopener">Buy the field kit — $29 on Sociobot ↗</a>
           <form id="restore-license" class="restore-form">
             <label for="license-token">Have a license?</label>
             <div><input id="license-token" name="license" autocomplete="off" spellcheck="false" placeholder="Paste license token" /><button type="submit" class="quiet-button inverse">Restore</button></div>
@@ -104,9 +120,9 @@
     </main>
 
     <footer class="site-footer">
-      <div><strong>Shared Capacity Slots</strong><p>Built for small service teams. Generated map artwork is original and disclosed in the project design notes.</p></div>
+      <div><strong>Shared Capacity Slots</strong><p>Find open service times across people, rooms, and equipment.</p></div>
       <nav aria-label="Legal links"><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></nav>
-      <p>© 2026 Sociobot · <span id="network-status">Checking connection…</span></p>
+      <p>Built by Param Factory · Version 1.1.0 · <span id="network-status">Checking connection…</span></p>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>

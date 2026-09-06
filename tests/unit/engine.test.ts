@@ -24,7 +24,7 @@ const busy: BusyBlock[] = [
 ];
 
 describe('capacity engine', () => {
-  it('recovers valid alternatives that one shared busy calendar would hide', () => {
+  it('@claim:shared-calendar-comparison recovers valid alternatives that one shared busy calendar would hide', () => {
     const result = calculateSlots({ resources, service, busyBlocks: busy, timezone: 'UTC', startDate: '2026-08-31', days: 1, stepMinutes: 60 });
     expect(result.offeredCount).toBe(8);
     expect(result.baselineCount).toBe(2);
@@ -59,5 +59,18 @@ describe('capacity engine', () => {
     const result = calculateSlots({ resources, service: peopleOnly, busyBlocks: bothBusy, timezone: 'UTC', startDate: '2026-08-31', days: 1, stepMinutes: 30 });
     expect(result.slots.some((slot) => slot.start === '2026-08-31T09:00:00.000Z')).toBe(false);
     expect(result.slots.some((slot) => slot.start === '2026-08-31T10:30:00.000Z')).toBe(true);
+  });
+
+  it('@claim:conflict-free-slots returns only starts with a complete, non-overlapping allocation', () => {
+    const result = calculateSlots({ resources, service, busyBlocks: busy, timezone: 'UTC', startDate: '2026-08-31', days: 1, stepMinutes: 30 });
+    expect(result.slots.length).toBeGreaterThan(0);
+    for (const slot of result.slots) {
+      const start = new Date(slot.start).getTime();
+      const end = new Date(slot.end).getTime();
+      expect(new Set(slot.exampleResourceIds).size).toBe(2);
+      expect(slot.exampleResourceIds).toContain('room');
+      expect(slot.exampleResourceIds.some((id) => id === 'maya' || id === 'leo')).toBe(true);
+      expect(busy.some((block) => slot.exampleResourceIds.includes(block.resourceId) && start < new Date(block.end).getTime() && end > new Date(block.start).getTime())).toBe(false);
+    }
   });
 });

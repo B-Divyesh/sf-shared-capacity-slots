@@ -14,8 +14,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 5'] } },
+    { name: 'chromium', testMatch: /app\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', testMatch: /mobile\.spec\.ts/, use: { ...devices['Pixel 5'] } },
   ],
   webServer: {
     command: 'npm run preview',

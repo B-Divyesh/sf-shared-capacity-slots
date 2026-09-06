@@ -1,8 +1,9 @@
-const VERSION = 'scs-v1.0.1';
+const VERSION = 'scs-v1.1.0';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const SHELL = [
   '/',
+  '/?demo=1',
   '/index.html',
   '/offline.html',
   '/privacy/',

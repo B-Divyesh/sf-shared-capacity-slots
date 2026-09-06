@@ -45,9 +45,13 @@ export function partsInZone(date: Date, timeZone: string): Required<LocalDateTim
 export function zonedDateTimeToDate(local: LocalDateTime, timeZone: string): Date {
   const second = local.second ?? 0;
   const wanted = Date.UTC(local.year, local.month - 1, local.day, local.hour, local.minute, second);
-  let candidate = wanted;
-  for (let pass = 0; pass < 4; pass += 1) {
-    const observed = partsInZone(new Date(candidate), timeZone);
+  const offsets = new Set<number>();
+
+  // Probe both sides of nearby offset changes. This covers one-hour and
+  // fractional-hour transitions without assuming a hemisphere or DST season.
+  for (let hours = -36; hours <= 36; hours += 6) {
+    const instant = wanted + hours * 3_600_000;
+    const observed = partsInZone(new Date(instant), timeZone);
     const observedAsUtc = Date.UTC(
       observed.year,
       observed.month - 1,
@@ -56,20 +60,26 @@ export function zonedDateTimeToDate(local: LocalDateTime, timeZone: string): Dat
       observed.minute,
       observed.second,
     );
-    const delta = wanted - observedAsUtc;
-    candidate += delta;
-    if (delta === 0) break;
+    offsets.add(observedAsUtc - instant);
   }
-  const result = new Date(candidate);
-  const finalParts = partsInZone(result, timeZone);
-  const matches =
-    finalParts.year === local.year &&
-    finalParts.month === local.month &&
-    finalParts.day === local.day &&
-    finalParts.hour === local.hour &&
-    finalParts.minute === local.minute;
-  if (!matches) throw new Error(`The local time ${formatLocal(local)} does not exist in ${timeZone}.`);
-  return result;
+
+  const matches = [...offsets]
+    .map((offset) => new Date(wanted - offset))
+    .filter((candidate) => {
+      const observed = partsInZone(candidate, timeZone);
+      return observed.year === local.year &&
+        observed.month === local.month &&
+        observed.day === local.day &&
+        observed.hour === local.hour &&
+        observed.minute === local.minute &&
+        observed.second === second;
+    })
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  if (!matches.length) throw new Error(`The local time ${formatLocal(local)} does not exist in ${timeZone}.`);
+  // Fall-back repeats a wall time. Choosing its first occurrence makes imports
+  // deterministic across engines and keeps the full stated duration visible.
+  return matches[0];
 }
 
 export function parseLocalDate(value: string): Pick<LocalDateTime, 'year' | 'month' | 'day'> {

@@ -6,6 +6,7 @@ const data = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 const browser = await chromium.launch({ headless: true });
 
 for (const [name, size, inset] of [
+  ['apple-touch-icon.png', 180, 0],
   ['icon-192.png', 192, 0],
   ['icon-512.png', 512, 0],
   ['icon-maskable-512.png', 512, 51],

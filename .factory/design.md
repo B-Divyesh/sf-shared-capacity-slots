@@ -4,6 +4,8 @@
 
 Shared Capacity Slots uses **topographic cartography** as an operating metaphor. A tiny service business does not have one flat “available/busy” calendar; it has layers—people, rooms, equipment, and service requirements—that overlap like terrain. Contour lines reveal usable valleys without pretending the map is the territory. The interface therefore feels like a working field chart: warm paper, precise coordinate labels, strong ink, and vermilion survey marks.
 
+The cartography stays visual. Product headings and instructions use literal scheduling words so a first-time visitor does not need to interpret the visual metaphor.
+
 This is intentionally a single-mode, daylight chart. The parchment ground is part of the information model, not a theme preference, and retains excellent contrast in bright rooms where front-desk planning happens. Browser/OS controls still receive `color-scheme: light`.
 
 ## Palette
@@ -43,7 +45,7 @@ No runtime or self-hosted font files are needed, keeping the first load resilien
 
 ## Interaction grammar
 
-- Setup follows a visible survey sequence: **Resources → Services → Busy time → Results**. The next required step is always explicit.
+- Setup follows a visible sequence: **Resources → Services → Busy time → Results**. The next required step is always explicit.
 - Selected navigation gets a filled coordinate marker, not just a color change.
 - Forms use persistent labels and inline, announced errors. Every save confirms locally.
 - Results are a weekly map: rows are dates, “contour bands” are offerable times, and a text/table alternative gives the exact same data.
@@ -70,5 +72,6 @@ Prompt sheet:
 - Generation date: 2026-08-28.
 - License/provenance: original AI-generated artwork created for this product; no third-party source image.
 - The accepted source candidate and prompt sidecars live in `assets/src/`; responsive AVIF/WebP plus JPEG fallback live in `public/assets/`. Every shipped hero variant is below 300KB.
+- `public/assets/social-card.jpg` is a 1200×630 crop of the same accepted original artwork. It introduces no third-party material.
 
-All UI icons are original inline SVG strokes based on survey marks; no icon library or external assets are used.
+All UI icons are original inline SVG strokes based on survey marks; no icon library or external assets are used. The Apple touch icon is rendered from the same original SVG mark.

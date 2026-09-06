@@ -1,0 +1,1 @@
+Find open service times across staff, rooms, and equipment without merging every calendar.

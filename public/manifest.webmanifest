@@ -3,7 +3,7 @@
   "short_name": "Capacity Slots",
   "description": "Find conflict-free service capacity across people, rooms, and equipment, entirely on your device.",
   "id": "/?source=pwa",
-  "start_url": "/?v=1",
+  "start_url": "/?v=2",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

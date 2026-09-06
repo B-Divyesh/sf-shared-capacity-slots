@@ -1,0 +1,93 @@
+[
+  {
+    "id": "sample-sandbox",
+    "claim": "The one-click sample shows calculated results, resets cleanly, and never changes a saved plan.",
+    "where": "first screen, demo banner, README",
+    "test": "npm run test:e2e -- --grep @claim:sample-sandbox",
+    "sandbox": "fresh browser; save a real resource; enter demo; change and reset it; return and confirm the real resource"
+  },
+  {
+    "id": "local-calendar-privacy",
+    "claim": "Calendar files stay on this device and the free planning flow sends no third-party requests.",
+    "where": "first screen, busy-time form, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-calendar-privacy",
+    "sandbox": "fresh demo; record every request while importing an ICS file; require same-origin requests only"
+  },
+  {
+    "id": "conflict-free-slots",
+    "claim": "Calculated starts have a complete resource assignment with no busy-time conflicts.",
+    "where": "method section, results, README",
+    "test": "npm run test:unit -- --run -t @claim:conflict-free-slots",
+    "sandbox": "representative people, room, service requirements, and overlapping busy blocks"
+  },
+  {
+    "id": "csv-export",
+    "claim": "Availability exports as CSV with one row per calculated start.",
+    "where": "results, README",
+    "test": "npm run test:e2e -- --grep @claim:csv-export",
+    "sandbox": "sample results; download CSV; verify its header and row count"
+  },
+  {
+    "id": "advisory-ics-export",
+    "claim": "The ICS export contains advisory free time and creates no booking events.",
+    "where": "method section, results, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:advisory-ics-export",
+    "sandbox": "sample results; download ICS; require VFREEBUSY and reject VEVENT"
+  },
+  {
+    "id": "json-backup",
+    "claim": "A JSON backup contains the complete saved plan.",
+    "where": "data controls, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:json-backup",
+    "sandbox": "sample data; download and parse backup; verify all resources and services"
+  },
+  {
+    "id": "local-persistence",
+    "claim": "A real plan persists in browser storage across reloads.",
+    "where": "planner status, privacy page, README",
+    "test": "npm run test:e2e -- --grep @claim:local-persistence",
+    "sandbox": "fresh browser; create a resource; reload; verify it remains"
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The installed planner and sample work offline after the first visit.",
+    "where": "first screen, README",
+    "test": "npm run test:e2e -- --grep @claim:offline-reload",
+    "sandbox": "dedicated fresh browser context; install shell; load demo; go offline; reload and verify calculated results"
+  },
+  {
+    "id": "paid-field-kit",
+    "claim": "A successfully verified field-kit license enables 28-day planning and removes saved resource and service limits.",
+    "where": "pricing section, terms, README",
+    "test": "npm run test:e2e -- --grep @claim:paid-field-kit",
+    "sandbox": "fresh browser; recorded valid verification response; add a fifth resource; confirm unverified tokens remain covered separately"
+  },
+  {
+    "id": "license-fail-closed",
+    "claim": "A new or changed license stays locked until the billing service verifies it.",
+    "where": "README, license restore",
+    "test": "npm run test:e2e -- --grep @claim:license-fail-closed",
+    "sandbox": "fresh browser; block the verification endpoint; paste an arbitrary token; confirm 28-day planning stays disabled"
+  },
+  {
+    "id": "end-to-end-plan",
+    "claim": "A user can define resources and services, import ICS busy time, and calculate offerable starts.",
+    "where": "product workflow, README",
+    "test": "npm run test:e2e -- --grep @claim:end-to-end-plan",
+    "sandbox": "fresh browser; create a person and service; import an event; calculate in UTC"
+  },
+  {
+    "id": "shared-calendar-comparison",
+    "claim": "The result compares actual resource capacity with a conservative shared-calendar baseline.",
+    "where": "results, README",
+    "test": "npm run test:unit -- --run -t @claim:shared-calendar-comparison",
+    "sandbox": "two alternative people with complementary busy blocks; compare recovered and baseline counts"
+  },
+  {
+    "id": "timezone-boundaries",
+    "claim": "Timezone conversion handles spring gaps, fall repeats, both hemispheres, and half-hour DST changes.",
+    "where": "README",
+    "test": "npm run test:unit -- --run -t @claim:timezone-boundaries",
+    "sandbox": "fixed 2026 boundaries in New York, Berlin, Auckland, and Lord Howe"
+  }
+]
